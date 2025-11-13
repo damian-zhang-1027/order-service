@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1-create-orders-table" author="system-dev">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="orders"/></not>
+        </preConditions>
+        <comment>Create the core orders table (Saga state machine)</comment>
+
+        <createTable tableName="orders">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="buyer_user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_amount" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="orders" indexName="idx_buyer_user_id">
+            <column name="buyer_user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="2-create-order-items-table" author="system-dev">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="order_items"/></not>
+        </preConditions>
+        <comment>Create the order_items table (Saga details)</comment>
+
+        <createTable tableName="order_items">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="order_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="seller_admin_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unit_price" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="order_items" indexName="idx_order_id">
+            <column name="order_id"/>
+        </createIndex>
+        <createIndex tableName="order_items" indexName="idx_seller_admin_id">
+            <column name="seller_admin_id"/>
+        </createIndex>
+
+        </changeSet>
+
+</databaseChangeLog>
