@@ -10,8 +10,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.ecommerce.order.exception.InsufficientStockException;
 import com.ecommerce.order.exception.OrderAccessDeniedException;
 import com.ecommerce.order.exception.OrderNotFoundException;
+import com.ecommerce.order.exception.ProductFetchException;
+import com.ecommerce.order.exception.SaaSValidationException;
 import com.ecommerce.order.framework.response.GlobalResponse;
 
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +37,16 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         log.warn("Validation failed: {}", errorMessage);
         GlobalResponse<Object> response = GlobalResponse.error(errorMessage);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handles 400 Bad Request (Business Logic exceptions).
+     */
+    @ExceptionHandler({ InsufficientStockException.class, SaaSValidationException.class, ProductFetchException.class })
+    public ResponseEntity<GlobalResponse<Object>> handleBadRequestBusinessException(RuntimeException ex) {
+        log.warn("Bad Request (Business Logic): {}", ex.getMessage());
+        GlobalResponse<Object> response = GlobalResponse.error(ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
