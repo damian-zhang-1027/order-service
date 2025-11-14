@@ -22,7 +22,6 @@ import com.ecommerce.order.exception.InsufficientStockException;
 import com.ecommerce.order.exception.ProductFetchException;
 import com.ecommerce.order.exception.SaaSValidationException;
 import com.ecommerce.order.kafka.dto.EventMetadata;
-import com.ecommerce.order.kafka.dto.OrderCreatedEvent;
 import com.ecommerce.order.kafka.dto.OrderItemDto;
 import com.ecommerce.order.model.db.entity.Order;
 import com.ecommerce.order.model.db.entity.OrderItem;
@@ -50,7 +49,8 @@ public class OrderCreationServiceImpl implements OrderCreationService {
     private final Tracer tracer;
 
     private static final String EVENT_TYPE_ORDER_CREATED = "ORDER_CREATED";
-    private static final String AGGREGATE_TYPE_ORDER = "orders";
+    private static final String TOPIC_ORDERS = "orders";
+    private static final String STATUS_PENDING = "PENDING";
 
     @Override
     @Transactional
@@ -109,23 +109,21 @@ public class OrderCreationServiceImpl implements OrderCreationService {
         orderItemRepository.saveAll(orderItems);
 
         EventMetadata metadata = buildEventMetadata(buyerUserId);
-        OrderCreatedEvent payload = new OrderCreatedEvent(
-                EVENT_TYPE_ORDER_CREATED,
-                savedOrder.getId(),
-                totalAmount,
-                orderItems.stream()
+        Map<String, Object> payloadMap = Map.of(
+                "orderId", savedOrder.getId(),
+                "totalAmount", totalAmount,
+                "items", orderItems.stream()
                         .map(item -> new OrderItemDto(item.getProductId(), item.getQuantity()))
-                        .collect(Collectors.toList()),
-                metadata);
+                        .collect(Collectors.toList()));
 
         OutboxEvent event = OutboxEvent.builder()
                 .eventId(UUID.randomUUID().toString())
-                .aggregateType(AGGREGATE_TYPE_ORDER)
+                .aggregateType(TOPIC_ORDERS)
                 .aggregateId(savedOrder.getId().toString())
                 .eventType(EVENT_TYPE_ORDER_CREATED)
-                .payload(jsonUtil.toJson(payload))
+                .payload(jsonUtil.toJson(payloadMap))
                 .metadata(jsonUtil.toJson(metadata))
-                .status("PENDING")
+                .status(STATUS_PENDING)
                 .build();
 
         outboxEventRepository.save(event);
